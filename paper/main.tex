@@ -1,0 +1,84 @@
+\documentclass[11pt]{article}
+
+% ===== Packages =====
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% ===== Title =====
+\title{Project Title Goes Here}
+\author{
+  Name One \and Name Two \and Name Three \and Name Four \and Name Five \\
+  \small Georgia Institute of Technology
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+One paragraph (150--250 words) summarizing the problem, approach, and key results.
+\end{abstract}
+
+\section{Introduction}
+Motivate the problem. Why does it matter? What is the gap in existing work? State your contributions as a short bulleted list.
+
+\section{Related Work}
+Summarize prior work, grouped by theme (e.g., vision-language pretraining, product image-text consistency, PEFT methods). Cite with \verb|\citep{}| or \verb|\citet{}|, e.g. \citep{example2024}.
+
+\section{Method}
+Describe your approach: problem formulation, model architecture, training/fine-tuning strategy, and any baselines.
+
+\subsection{Problem Formulation}
+Define notation and the task formally.
+
+\subsection{Model}
+Describe the model(s) used (e.g., CLIP-based encoder, fine-tuning scheme).
+
+\section{Experiments}
+
+\subsection{Datasets}
+Describe dataset(s), size, splits, and how positive/negative pairs were constructed.
+
+\subsection{Baselines}
+List baseline methods compared against.
+
+\subsection{Evaluation Metrics}
+Describe metrics (e.g., Accuracy, AUC, R@1).
+
+\subsection{Results}
+
+\begin{table}[h]
+\centering
+\caption{Main results.}
+\label{tab:main_results}
+\begin{tabular}{lccc}
+\toprule
+Method & Accuracy & AUC & R@1 \\
+\midrule
+Baseline (zero-shot CLIP) & -- & -- & -- \\
+Ours & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation Study}
+Discuss what happens when components are removed or varied.
+
+\section{Discussion}
+Interpret results, discuss limitations, and note failure cases.
+
+\section{Conclusion}
+Summarize findings and suggest future work.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

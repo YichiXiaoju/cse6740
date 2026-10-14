@@ -1,0 +1,17 @@
+data/raw/
+data/images/
+data/processed/
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+__pycache__/
+.ipynb_checkpoints/
+.env
+wandb/
+runs/
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
