@@ -27,7 +27,7 @@ ABO listings/images 元数据从 `https://amazon-berkeley-objects.s3.amazonaws.c
 tar,按分片/按需单张图拉取,几分钟内能跑完)。图片本身不进 git,`docs/mini_version/items.csv` 和
 `pairs.csv` 是给大家对齐字段用的,要跑模型还是要自己跑一遍上面的脚本把图下下来。
 
-## 做了哪些决定(欢迎挑战)
+## 做了哪些决定
 1. **类别 = 家具**,对应 open-decisions.md 选项 B(只用家具)。还没做 OOD(家居装饰/服饰鞋靴),
    那是 Sean 的 WP10。
 2. **N2 相似度**用 `sentence-transformers/all-MiniLM-L6-v2`(非 CLIP),同 product_type 内、排除同
