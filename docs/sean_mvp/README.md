@@ -1,8 +1,8 @@
 # Sean 的 WP3 / WP10 最小版本
 
-**状态：WP3 / WP10 第一版 MVP。代码与候选数据已生成，Sean 已完成 260 条人工初审；N2 部分标签待复核，数据尚不是最终 benchmark。**
+**状态：WP3 / WP10 MVP 已同步 Kira 的 d40b8f3 修复。保留 260 条原始初审，并完成 39 条变更 N2 的复核；两条未变更 N2 的争议仍待裁决，数据尚不是最终 benchmark。**
 
-基于 Kira PR #1 的 `bd3e1fad03e4931bbb1928ba0de5912ca7361fa5`，不修改她的生成流程。
+当前基于 Kira PR #1 的 `d40b8f3495487c885947bac0a8be5f4df6a984e3`。原 `bd3e1fa` 审核记录保留为历史，不修改她的生成流程。
 本地分支以 Kira 分支为基础；若提交 PR，应以 Kira 分支为 base，避免把她的改动重复算作 Sean 的工作。
 提交范围仅为 Sean 的 N3、OOD、审查工具及说明，不修改 Kira 原有 N1/N2 生成流程。
 
@@ -10,8 +10,8 @@
 
 | 内容 | 规模 / 状态 |
 |---|---|
-| 颜色 N3 候选 | 1,118 条：train 884 / val 98 / test 136；其中 100 条已初审 |
-| WP3 审查样本 | 原 N2 100 条 + 新 N3 100 条，已完成初审 |
+| 颜色 N3 候选 | 1,118 条：train 885 / val 104 / test 129；其中 100 条已初审 |
+| WP3 审查样本 | N2 100 条 + N3 100 条；39 条变更 N2 已复核，61 条输入未变的 N2 沿用初审 |
 | 近 OOD 候选 | LAMP / LIGHT_FIXTURE，150 件商品 |
 | 远 OOD 候选 | SHOES / SANDAL / BOOT，150 件商品 |
 | OOD 配对 | 两档各 pos/N1/N2 150 条、N3 29 条，合计 958 对 |
@@ -21,6 +21,16 @@
 近/远 OOD 类别是本次可运行的候选配置，尚未替代组内正式类别决定。若训练范围扩大，必须重跑。
 
 ## 已完成的人工初审与当前限制
+
+### 2026-10-21：同步与复核
+
+- 新版判断入口为 `reviews/ID_review_current_d40b8f3.csv`，与当前 `review_sample.csv` 对应。N2 为 59 条有效负例、35 条其实匹配、6 条无法判断；N3 为 100 条有效负例。
+- `reviews/N2_recheck_d40b8f3_completed.csv` 保存本次原始导出字段：39 条中有效负例 28、其实匹配 8、无法判断 3。逐条校验 dataset_id、commit、图片、标题、split 和 group；其余 N2 只在 `(image_path, text)` 完全不变时沿用旧判断。
+- N3 已用新 items 和原始 ABO 属性重跑。候选 ID、图片及改后文字全部不变，108 条 split 更新，audit 的 group 信息同步；100 条已初审 N3 中有 7 条 split 更新。当前可用负例表为 `reviews/ID_N3_retained_current.csv`，历史表不覆盖。
+- OOD 用新 items 重新运行完整分组和选样，得到的 300 件商品及 group_id 与旧表逐行相同；因此配对及人工判断继续保留。
+- 新版 N1/N2 的跨 split 取图、同图、正负输入冲突计数均为 0。这是 Kira 的修复，不代表语义假负例已消失。仍有 2 个共享图片路径横跨数据 split，正式实验前应处理或说明；配对构造检查为零不等于全量图像泄漏检查通过。
+- 当前 N2 的 35/94 是审核者的“其实匹配”标记率，不是独立裁决后的真实假负例率，也不能直接用旧新比率声称算法改善。两条旧争议仍见 `n2_adjudication_queue.csv`；本次 39 条不包含它们。
+- 详情与校验计数见 `reviews/current_review_summary.json`。下表是历史初审，不能作为当前版汇总。
 
 原始初审判断见 `reviews/ID_review_completed.csv`、`reviews/OOD_review_completed.csv`；初审统计、来源哈希和待复核条目见同目录。空白 `review_sample.csv` 是生成时的原始抽样模板，不代表尚未完成初审。
 
@@ -38,11 +48,11 @@
 
 **N3 标签有效和没有文本捷径是两回事。** 当前目标词仅 red / blue / green / yellow，且复杂商品颜色表达覆盖不足；模型可能利用颜色词和措辞分布预测标签。尚未完成 text-only 对照，因此本版不能宣称无文本偏差。下一版计划优先从真实同类标题提取自然颜色表达，并与正例对齐词汇分布，之后重新抽检；这些改进尚未实现。
 
-对上游家具 N2 的静态诊断还发现：3,978 条中有 1,342 条跨 split 取图、47 条使用原商品同图，69 条的 `(image_path, text)` 与某条正例完全相同却标为负例。不同计数可能重叠。本提交只报告这些发现，不把上游数据修复算作已完成。
+历史 `bd3e1fa` 家具 N2 静态诊断：3,978 条中有 1,342 条跨 split 取图、47 条使用原商品同图，69 条与正例输入完全相同。计数可能重叠；Kira 已在 d40b8f3 修复，本次同步并独立复查为 0。
 
 ## 如何继续审查或复核
 
-1. 下载并在浏览器打开随交付附上的 `Sean_N2_N3_Review.html`。
+1. 旧 `Sean_N2_N3_Review.html` 对应 bd3e1fa，只用于查阅旧版。d40b8f3 的 `Sean_N2_Recheck_39.html` 对应本次 39 条，其结果已归档。若要继续审查当前候选，按下文命令重新生成页面及对应 sample，勿把旧页面导出套到当前 sample 上。
 2. 对照当前图片和标题，选择「有效负例 / 假负例 / 无法判断」。只有明确矛盾才是不匹配，标题漏说不算错。
 3. 审查 N2 100 条、N3 100 条；注明主要原因。缺图或属性无法从图片辨认时选择无法判断。
 4. 定期点「备份进度 JSON」，结束时点「导出审查 CSV」。页面的筛选不影响导出：始终导出整批记录。
@@ -122,7 +132,7 @@ python src/data/download_pair_images.py --csv docs/sean_mvp/ood_items.csv
 
 ```bash
 python src/negatives/finalize_review.py \
-  --review-csv data/processed/sean/sean_review_completed.csv \
+  --review-csv docs/sean_mvp/reviews/ID_review_current_d40b8f3.csv \
   --sample-csv docs/sean_mvp/review_sample.csv \
   --n3-candidates docs/sean_mvp/n3_candidates.csv \
   --out-dir data/processed/sean/reviewed
@@ -142,9 +152,9 @@ python src/negatives/finalize_review.py \
 
 - `python -m unittest discover -s tests -v`：10 个测试，覆盖颜色过滤、保留 split、OOD 跨档采样、已有组隔离、待审数据不能冒充已审核、导出数据防串批。
 - 实际数据检查和图片验证见 `validation.json`。
-- 已完成 200 条 ID 与 60 条 OOD 初审。N2 争议标签待复核，原始人工记录保持不变。
+- 已完成 200 条 ID 与 60 条 OOD 初审，另有 39 条新版 N2 复核，共 299 次记录、260 个审核 pair ID。两条未变更 N2 的争议仍待裁决，原始人工记录保持不变。
 - 尚未跑模型基线或 text-only 捷径检查，这是 Jack / Aaron / Jane 的后续对接工作。
-- Kira 原 N1/N2 构造存在跨 split 候选问题，本次不改其已有配对；主审查仍抽原始 N2，避免改变审查对象。正式实验前需组内修复并重新对齐样本。
+- 已同步 Kira 的 N1/N2 修复并对齐当前审核对象。结构检查不替代逐条语义审核；当前 N2 标签仍包含未裁决争议。
 - 当前 pos/N1/N2/N3 数量不平衡，不能直接把多数类准确率当作模型提升。最终比例、类别范围和分负例类型评估口径仍需组内确认。
 - 原始 metadata、图片、模型缓存以及含图片的 HTML 均不提交 git；仓库只保留代码、规则、派生候选表与小统计文件。
 

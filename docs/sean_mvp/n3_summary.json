@@ -5,9 +5,9 @@
   "candidates": 1118,
   "raw_color_checked": true,
   "by_split": {
-    "train": 884,
-    "val": 98,
-    "test": 136
+    "train": 885,
+    "val": 104,
+    "test": 129
   },
   "skipped_by_reason": {
     "raw_color_missing_multivalue_or_ambiguous": 2538,

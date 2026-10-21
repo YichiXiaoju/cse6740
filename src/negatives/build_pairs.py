@@ -8,8 +8,16 @@ to; `text` is the title attached to it (for pos it's the same item's own
 title; for negatives it's a different item's title paired onto this image).
 
 N2 similarity uses a non-CLIP sentence encoder (all-MiniLM-L6-v2) over
-en_US titles, scoped to the same product_type, excluding the text owner's
-own near-duplicate group.
+en_US titles, scoped to the same product_type and the same split as the
+text owner, excluding the text owner's own near-duplicate group.
+
+Both N1 and N2 candidates are restricted to the text owner's own split (a
+train item never gets a val/test image as its negative, and vice versa),
+and are never allowed to reproduce an existing positive (image_path, text)
+pair - this matters because a few main images are shared by many unrelated
+items (ABO placeholder "no photo" stock images; see
+_MAX_SHARED_IMAGE_FOR_GROUPING in build_items.py), so "different group_id"
+alone doesn't guarantee a different, non-contradictory image.
 
 Usage:
     python src/negatives/build_pairs.py \
@@ -31,29 +39,53 @@ def load_items(items_csv):
         return list(csv.DictReader(f))
 
 
+def _build_pos_index(items):
+    """Set of (image_path, text) combos already used as a positive pair -
+    a negative must never reproduce one of these."""
+    return {(it["image_path"], it["title"]) for it in items}
+
+
+def _is_valid_negative(owner, candidate, pos_index):
+    if candidate["group_id"] == owner["group_id"]:
+        return False
+    if candidate["split"] != owner["split"]:
+        return False
+    if candidate["image_path"] == owner["image_path"]:
+        return False
+    if (candidate["image_path"], owner["title"]) in pos_index:
+        return False
+    return True
+
+
 def build_n1(items, seed=42):
-    """For each item, a random image from a different group_id."""
+    """For each item, a random image from a different group_id, same split."""
     rng = random.Random(seed)
-    by_group = defaultdict(list)
+    pos_index = _build_pos_index(items)
+    by_split = defaultdict(list)
     for it in items:
-        by_group[it["group_id"]].append(it)
-    all_groups = list(by_group.keys())
+        by_split[it["split"]].append(it)
 
     n1_image_for = {}
+    skipped_no_candidate = 0
     for it in items:
-        other_group = it["group_id"]
-        while other_group == it["group_id"]:
-            other_group = rng.choice(all_groups)
-        n1_image_for[it["item_id"]] = rng.choice(by_group[other_group])
+        candidates = [c for c in by_split[it["split"]] if _is_valid_negative(it, c, pos_index)]
+        if not candidates:
+            skipped_no_candidate += 1
+            continue
+        n1_image_for[it["item_id"]] = rng.choice(candidates)
+    if skipped_no_candidate:
+        print(f"N1: {skipped_no_candidate} items had no valid same-split different-group candidate (skipped)")
     return n1_image_for
 
 
 def build_n2(items, model_name="all-MiniLM-L6-v2", batch_size=256):
     """For each item, the most title-similar item in the same product_type
-    and a different group_id (non-CLIP sentence embeddings)."""
+    and split, excluding its own near-duplicate group (non-CLIP sentence
+    embeddings)."""
     from sentence_transformers import SentenceTransformer
     from sklearn.metrics.pairwise import cosine_similarity
 
+    pos_index = _build_pos_index(items)
     model = SentenceTransformer(model_name)
     titles = [it["title"] for it in items]
     embeddings = model.encode(titles, batch_size=batch_size, show_progress_bar=True, normalize_embeddings=True)
@@ -67,19 +99,18 @@ def build_n2(items, model_name="all-MiniLM-L6-v2", batch_size=256):
     for pt, idxs in by_pt.items():
         sub_emb = embeddings[idxs]
         sims = cosine_similarity(sub_emb, sub_emb)
-        groups = [items[i]["group_id"] for i in idxs]
         for row, i in enumerate(idxs):
-            own_group = items[i]["group_id"]
+            owner = items[i]
             row_sims = sims[row].copy()
-            for col, g in enumerate(groups):
-                if g == own_group:
+            for col, j in enumerate(idxs):
+                if not _is_valid_negative(owner, items[j], pos_index):
                     row_sims[col] = -np.inf
             best_col = int(np.argmax(row_sims))
             if row_sims[best_col] == -np.inf:
                 skipped_no_candidate += 1
                 continue
-            n2_image_for[items[i]["item_id"]] = items[idxs[best_col]]
-    print(f"N2: {skipped_no_candidate} items had no same-category different-group candidate (skipped)")
+            n2_image_for[owner["item_id"]] = items[idxs[best_col]]
+    print(f"N2: {skipped_no_candidate} items had no valid same-split same-category candidate (skipped)")
     return n2_image_for
 
 
