@@ -12,6 +12,8 @@
 
 ## 怎么复现
 ```
+python src/data/fetch_raw.py --out-dir data/raw
+
 python src/data/count_categories.py --listings-dir data/raw/listings/metadata \
     --out-csv docs/category_counts.csv --out-md docs/category_counts.md
 
