@@ -121,6 +121,7 @@ def group_items(items):
     uf = UnionFind()
     by_main_image = {}
     by_title_key = {}
+    by_exact_title = {}
 
     image_freq = {}
     for it in items:
@@ -144,6 +145,16 @@ def group_items(items):
                 uf.union(it["item_id"], by_title_key[key])
             else:
                 by_title_key[key] = it["item_id"]
+
+        # Re-listed duplicates sometimes carry a wrong/inconsistent color or material field
+        # (title still says "Denim Blue", color field says "Beige"), which breaks the
+        # normalized-title match above. An exact, byte-for-byte identical title is on its own
+        # strong enough evidence of the same real product to merge on, independent of color/material.
+        exact_key = (it["product_type"], it["title"].strip().lower())
+        if exact_key in by_exact_title:
+            uf.union(it["item_id"], by_exact_title[exact_key])
+        else:
+            by_exact_title[exact_key] = it["item_id"]
 
     root_to_group_id = {}
     for it in items:
